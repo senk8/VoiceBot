@@ -1,5 +1,5 @@
 import { Message, Client, Intents} from 'discord.js'
-import { joinVoiceChannel, VoiceConnection, createAudioPlayer, createAudioResource, NoSubscriberBehavior, AudioPlayerStatus } from '@discordjs/voice'
+import { joinVoiceChannel, VoiceConnection, entersState, createAudioPlayer, createAudioResource, NoSubscriberBehavior, AudioPlayerStatus } from '@discordjs/voice'
 import { createReadStream, readdir } from 'fs'
 import * as dotenv from "dotenv"
 dotenv.config()
@@ -12,8 +12,10 @@ client.on('ready', () => {
 })
 
 client.on('messageCreate', async (msg: Message) => {
-    const channnelId = msg.member?.voice.channelId as string
-    const guildId = msg.guildId as string
+    const channnelId = msg.member?.voice.channelId
+    if(!channnelId)return
+    const guildId = msg.guildId
+    if(!guildId)return
 
     if (msg.content.startsWith('!con')) {
         if(!!msg.guild?.voiceAdapterCreator){
@@ -36,14 +38,15 @@ client.on('messageCreate', async (msg: Message) => {
         });
         const subscription = vc.subscribe(player);
 
-        readdir(path, (err, files)=>{
+        readdir(path, async (err, files)=>{
             if (err) throw err;
             for( const file of files ){
                 const resource = createAudioResource(createReadStream(`${path}/${file}`), { inlineVolume: true })
                 resource.volume.setVolume(0.05);
                 player.play(resource);
 
-                player.on(AudioPlayerStatus.Idle, () => {});
+                msg.channel.send(`${file}を再生します。`)
+                await entersState(player, AudioPlayerStatus.Idle, 300000)
            }
         });
     } else if (msg.content.startsWith('!play')) {

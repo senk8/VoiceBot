@@ -5,8 +5,8 @@ import { Readable } from "stream";
 const PLAYER_TIME_OUT_DURATION = 300000
 
 export class VoiceService {
-    vc: VoiceConnection
-    player: AudioPlayer
+    private vc: VoiceConnection
+    private player: AudioPlayer
 
     constructor(channelId: string, guildId: string, creator: DiscordGatewayAdapterCreator){
         this.vc = joinVoiceChannel({
@@ -16,7 +16,7 @@ export class VoiceService {
         })
         this.player = createAudioPlayer({
             behaviors: {
-                noSubscriber: NoSubscriberBehavior.Pause,
+                noSubscriber: NoSubscriberBehavior.Pause
             },
         }).on('error', error => {
             console.error('Error:', error.message)

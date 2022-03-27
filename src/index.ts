@@ -1,17 +1,19 @@
 import { Message, Client, Intents} from 'discord.js'
-import { joinVoiceChannel, VoiceConnection, entersState, createAudioPlayer, createAudioResource, NoSubscriberBehavior, AudioPlayerStatus } from '@discordjs/voice'
-import { createReadStream, readdir } from 'fs'
+import {  AudioPlayerStatus } from '@discordjs/voice'
 import * as dotenv from "dotenv"
+import { TTSClient } from './ttsClient'
+import { VoiceService } from './voiceService'
 dotenv.config()
 
 const client = new Client({ intents: ['GUILDS', 'GUILD_MEMBERS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES']})
-let vc: VoiceConnection
+let voice: VoiceService
 
 client.on('ready', () => {
   console.log(`${client.user?.tag} でログインしています。`)
 })
 
 client.on('messageCreate', async (msg: Message) => {
+    if(msg.author.bot)return
     const channnelId = msg.member?.voice.channelId
     if(!channnelId)return
     const guildId = msg.guildId
@@ -19,60 +21,26 @@ client.on('messageCreate', async (msg: Message) => {
 
     if (msg.content.startsWith('!con')) {
         if(!!msg.guild?.voiceAdapterCreator){
-            vc = joinVoiceChannel({
-                channelId: channnelId,
-                guildId: guildId,
-                adapterCreator: msg.guild.voiceAdapterCreator
-            })
+            voice = new VoiceService(channnelId, guildId, msg.guild.voiceAdapterCreator)
         }
-    } else if (msg.content.startsWith('!playlist')) {
+    } 
+    if(!voice) return
+
+    const tts = new TTSClient(voice.player)
+    if (msg.content.startsWith('!playlist')) {
         const [ _ , title ] = msg.content.split(' ')
-        const path = `${__dirname}/playlist/${title}`
-
-        const player = createAudioPlayer({
-            behaviors: {
-                noSubscriber: NoSubscriberBehavior.Pause,
-            },
-        }).on('error', error => {
-            console.error('Error:', error.message)
-        });
-        const subscription = vc.subscribe(player);
-
-        readdir(path, async (err, files)=>{
-            if (err) throw err;
-            for( const file of files ){
-                const resource = createAudioResource(createReadStream(`${path}/${file}`), { inlineVolume: true })
-                resource.volume.setVolume(0.05);
-                player.play(resource);
-
-                msg.channel.send(`${file}を再生します。`)
-                await entersState(player, AudioPlayerStatus.Idle, 300000)
-           }
-        });
+        voice.playlist(title)
     } else if (msg.content.startsWith('!play')) {
         const [ _ , title ] = msg.content.split(' ')
-        const path = `${__dirname}/${title}.mp3`
+        voice.play(title)
 
-        const player = createAudioPlayer({
-            behaviors: {
-                noSubscriber: NoSubscriberBehavior.Pause,
-            },
-        }).on('error', error => {
-        	console.error('Error:', error.message)
-        });
-
-        const resource = createAudioResource(createReadStream(path), { inlineVolume: true })
-        resource.volume.setVolume(0.05);
-
-        const subscription = vc.subscribe(player);
-        player.play(resource);
-
-        player.on(AudioPlayerStatus.Playing, () => {
-            console.log("play now");
-            console.log("resource started:", resource.started);
+        voice.player.on(AudioPlayerStatus.Playing, () => {
+            msg.channel.send(`${title}を再生します。`)
         });
     } else if (msg.content.startsWith('!dc')){
-       vc.destroy()
+        voice.destroy()
+    } else {
+        tts.speech(msg.content)
     }
 })
 

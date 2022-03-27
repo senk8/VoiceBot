@@ -1,5 +1,6 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, DiscordGatewayAdapterCreator, entersState, joinVoiceChannel, NoSubscriberBehavior, VoiceConnection } from "@discordjs/voice";
 import { createReadStream, readdir } from "fs";
+import { Readable } from "stream";
 
 const PLAYER_TIME_OUT_DURATION = 300000
 
@@ -29,6 +30,13 @@ export class VoiceService {
         const resource = createAudioResource(createReadStream(path), { inlineVolume: true })
         resource.volume.setVolume(0.05);
 
+        this.player.play(resource);
+    }
+
+    playWithBytes(it: string | Uint8Array){
+        const stream = Readable.from(it)
+        const resource = createAudioResource(stream, { inlineVolume: true })
+        resource.volume.setVolume(0.05);
         this.player.play(resource);
     }
 

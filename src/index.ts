@@ -1,5 +1,4 @@
 import { Message, Client, Intents} from 'discord.js'
-import {  AudioPlayerStatus } from '@discordjs/voice'
 import * as dotenv from "dotenv"
 import { TTSClient } from './ttsClient'
 import { VoiceService } from './voiceService'
@@ -37,7 +36,7 @@ client.on('messageCreate', async (msg: Message) => {
     } else if (msg.content.startsWith('!dc')){
         voice.destroy()
     } else {
-        const tts = new TTSClient(voice.player)
+        const tts = new TTSClient(voice)
         tts.speech(msg.content)
     }
 })

@@ -1,14 +1,15 @@
 import { AudioPlayer, createAudioResource } from '@discordjs/voice';
 import * as textToSpeech from '@google-cloud/text-to-speech'
 import { Readable } from 'stream'
+import { VoiceService } from './voiceService';
 
 export class TTSClient {
   private client: textToSpeech.TextToSpeechClient
-  private player: AudioPlayer 
+  private voice: VoiceService 
 
-  constructor(player: AudioPlayer){
+  constructor(voice: VoiceService){
     this.client = new textToSpeech.TextToSpeechClient();
-    this.player = player
+    this.voice = voice
   }
 
   async speech(text: string) {
@@ -21,10 +22,6 @@ export class TTSClient {
     const [response] = await this.client.synthesizeSpeech(request);
     if(!response.audioContent) return
 
-    const stream = Readable.from(response.audioContent)
-    const resource = createAudioResource(stream, { inlineVolume: true })
-    resource.volume.setVolume(0.05);
-
-    this.player.play(resource);
+    this.voice.playWithBytes(response.audioContent);
   }
 }

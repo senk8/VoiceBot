@@ -32,7 +32,7 @@ export class VoiceService {
         this.player.play(resource);
     }
 
-    playlist(title: string){
+    playlist(title: string, postprocess: (title: string)=>void){
         const path = `${__dirname}/playlist/${title}`
 
         readdir(path, async (err, files)=>{
@@ -42,9 +42,9 @@ export class VoiceService {
                 resource.volume.setVolume(0.05);
                 this.player.play(resource);
 
-                //this.player.on(AudioPlayerStatus.Playing, () => {
-                //    msg.channel.send(`${file}を再生します。`)
-                //});
+                this.player.on(AudioPlayerStatus.Playing, () => {
+                    postprocess(file)
+                });
 
                 await entersState(this.player, AudioPlayerStatus.Idle, PLAYER_TIME_OUT_DURATION)
            }

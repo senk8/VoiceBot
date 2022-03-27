@@ -26,20 +26,18 @@ client.on('messageCreate', async (msg: Message) => {
     } 
     if(!voice) return
 
-    const tts = new TTSClient(voice.player)
     if (msg.content.startsWith('!playlist')) {
         const [ _ , title ] = msg.content.split(' ')
-        voice.playlist(title)
+        voice.playlist(title,  (title: string) => {
+            msg.channel.send(`${title}を再生します。`)
+        })
     } else if (msg.content.startsWith('!play')) {
         const [ _ , title ] = msg.content.split(' ')
         voice.play(title)
-
-        voice.player.on(AudioPlayerStatus.Playing, () => {
-            msg.channel.send(`${title}を再生します。`)
-        });
     } else if (msg.content.startsWith('!dc')){
         voice.destroy()
     } else {
+        const tts = new TTSClient(voice.player)
         tts.speech(msg.content)
     }
 })
